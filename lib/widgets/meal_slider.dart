@@ -1,30 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:movies_app/models/models.dart';
 
-class MovieSlider extends StatelessWidget {
-  // const MovieSlider({Key? key}) : super(key: key);
+class MealSlider extends StatelessWidget {
+  final List<Meal> meals;
+
+  const MealSlider({Key? key, required this.meals}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    if (meals.isEmpty) {
+      return Container(
+        width: double.infinity,
+        height: size.height * 0.5,
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
-      height: 260,
+      height: 270,
       // color: Colors.red,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
+          const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text('Populars',
+            child: Text('Spanish Meals',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           ),
-          SizedBox(
+          const SizedBox(
             height: 5,
           ),
           Expanded(
             child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: 20,
-                itemBuilder: (_, int index) => _MoviePoster()),
+                itemCount: meals.length,
+                itemBuilder: (_, int index) => _MealPoster(meal: meals[index])),
           )
         ],
       ),
@@ -32,8 +47,10 @@ class MovieSlider extends StatelessWidget {
   }
 }
 
-class _MoviePoster extends StatelessWidget {
-  const _MoviePoster({Key? key}) : super(key: key);
+class _MealPoster extends StatelessWidget {
+  final Meal meal;
+
+  const _MealPoster({Key? key, required this.meal}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -45,13 +62,13 @@ class _MoviePoster extends StatelessWidget {
       child: Column(
         children: [
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, 'details',
-                arguments: 'detalls peli'),
+            onTap: () =>
+                Navigator.pushNamed(context, 'details', arguments: meal.id),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: FadeInImage(
-                placeholder: AssetImage('assets/no-image.jpg'),
-                image: NetworkImage('https://via.placeholder.com/300x400'),
+                placeholder: const AssetImage('assets/no-image.jpg'),
+                image: NetworkImage(meal.thumb ?? ''),
                 width: 130,
                 height: 190,
                 fit: BoxFit.cover,
@@ -62,7 +79,7 @@ class _MoviePoster extends StatelessWidget {
             height: 5,
           ),
           Text(
-            'Star Wars: El retorno del Jedi',
+            meal.name ?? '',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,

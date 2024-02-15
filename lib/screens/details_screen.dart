@@ -1,37 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:movies_app/models/models.dart';
+import 'package:movies_app/providers/meals_provider.dart';
 import 'package:movies_app/widgets/widgets.dart';
+import 'package:provider/provider.dart';
 
 class DetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // TODO: Canviar després per una instància de Peli
-    final String peli =
-        ModalRoute.of(context)?.settings.arguments.toString() ?? 'no-movie';
+    String mealId = ModalRoute.of(context)?.settings.arguments as String;
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          _CustomAppBar(),
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                _PosterAndTitile(),
-                _Overview(),
-                _Overview(),
-                CastingCards(),
-              ],
-            ),
+    final mealsProvider = Provider.of<MealsProvider>(context, listen: false);
+    return FutureBuilder(
+      future: mealsProvider.getMealById(mealId),
+      builder: (BuildContext context, AsyncSnapshot<Meal> snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        final Meal meal = snapshot.data!;
+
+        return Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              _CustomAppBar(meal: meal),
+              SliverList(
+                delegate: SliverChildListDelegate(
+                  [
+                    _ThumbAndMealName(meal: meal),
+                    _Overview(meal: meal),
+                    IngredientsCards(ingredients: meal.ingredients),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
 class _CustomAppBar extends StatelessWidget {
+  final Meal meal;
+
+  const _CustomAppBar({required this.meal});
+
   @override
   Widget build(BuildContext context) {
-    // Exactament igual que la AppBaer però amb bon comportament davant scroll
     return SliverAppBar(
       backgroundColor: Colors.indigo,
       expandedHeight: 200,
@@ -39,20 +56,20 @@ class _CustomAppBar extends StatelessWidget {
       pinned: true,
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
-        titlePadding: EdgeInsets.all(0),
+        titlePadding: const EdgeInsets.all(0),
         title: Container(
           width: double.infinity,
           alignment: Alignment.bottomCenter,
           color: Colors.black12,
           padding: const EdgeInsets.only(bottom: 10),
           child: Text(
-            'Títol peli',
-            style: TextStyle(fontSize: 16),
+            meal.name,
+            style: const TextStyle(fontSize: 16),
           ),
         ),
         background: FadeInImage(
-          placeholder: AssetImage('assets/loading.gif'),
-          image: NetworkImage('https://via.placeholder.com/500x300'),
+          placeholder: const AssetImage('assets/loading.gif'),
+          image: NetworkImage(meal.thumb ?? ''),
           fit: BoxFit.cover,
         ),
       ),
@@ -60,7 +77,11 @@ class _CustomAppBar extends StatelessWidget {
   }
 }
 
-class _PosterAndTitile extends StatelessWidget {
+class _ThumbAndMealName extends StatelessWidget {
+  final Meal meal;
+
+  const _ThumbAndMealName({required this.meal});
+
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
@@ -72,36 +93,26 @@ class _PosterAndTitile extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: FadeInImage(
-              placeholder: AssetImage('assets/loading.gif'),
-              image: NetworkImage('https://via.placeholder.com/200x300'),
+              placeholder: const AssetImage('assets/loading.gif'),
+              image: NetworkImage(meal.thumb ?? ''),
               height: 150,
             ),
           ),
           const SizedBox(
             width: 20,
           ),
-          Column(
-            children: [
-              Text(
-                'Títol peli',
-                style: textTheme.headline5,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-              ),
-              Text(
-                'Títol original',
-                style: textTheme.subtitle1,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-              ),
-              Row(
-                children: [
-                  const Icon(Icons.star_outline, size: 15, color: Colors.grey),
-                  const SizedBox(width: 5),
-                  Text('Nota mitjana', style: textTheme.caption),
-                ],
-              )
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  meal.name,
+                  style: textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+              ],
+            ),
           )
         ],
       ),
@@ -110,14 +121,18 @@ class _PosterAndTitile extends StatelessWidget {
 }
 
 class _Overview extends StatelessWidget {
+  final Meal meal;
+
+  const _Overview({required this.meal});
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Text(
-        'Labore eiusmod ad reprehenderit irure eu sunt ex minim. Lorem fugiat Lorem proident duis ea cupidatat. Commodo duis culpa reprehenderit ad elit. Velit duis officia reprehenderit ullamco sint id anim officia est. Enim mollit nisi et exercitation dolore commodo. Cillum mollit laborum non nulla cillum non do reprehenderit Lorem deserunt ex eu sunt do.',
+        meal.instructions ?? '',
         textAlign: TextAlign.justify,
-        style: Theme.of(context).textTheme.subtitle1,
+        style: Theme.of(context).textTheme.titleMedium,
       ),
     );
   }
